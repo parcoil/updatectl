@@ -19,6 +19,8 @@ Installer scripts are provided in the repository for easy installation.
 2. Build the executable: `go build -o updatectl main.go`
 3. Move `updatectl` to a directory in your PATH (e.g., `/usr/local/bin/` on Linux or `C:\Program Files\updatectl\` on Windows).
 
+or build it and upload to your server
+
 ## Usage
 
 ### Initialize Configuration
