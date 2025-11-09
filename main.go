@@ -35,7 +35,7 @@ func main() {
 		Use:     "updatectl",
 		Version: version,
 	}
-	rootCmd.AddCommand(initCmd, watchCmd)
+	rootCmd.AddCommand(initCmd, watchCmd, buildCmd)
 	rootCmd.Execute()
 }
 
@@ -120,6 +120,39 @@ var watchCmd = &cobra.Command{
 	},
 }
 
+var buildCmd = &cobra.Command{
+	Use:   "build [project-name]",
+	Short: "Run build command for a specific project",
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		projectName := args[0]
+		config := loadConfig()
+
+		for _, p := range config.Projects {
+			if p.Name == projectName {
+				if p.BuildCommand == "" {
+					fmt.Printf("No build command configured for project %s\n", projectName)
+					return
+				}
+
+				fmt.Printf("Building project %s...\n", projectName)
+				cmd := exec.Command("bash", "-c", p.BuildCommand)
+				cmd.Dir = p.Path
+				cmd.Stdout = os.Stdout
+				cmd.Stderr = os.Stderr
+				err := cmd.Run()
+				if err != nil {
+					fmt.Printf("Build failed for %s: %v\n", projectName, err)
+				} else {
+					fmt.Printf("Build completed for %s\n", projectName)
+				}
+				return
+			}
+		}
+		fmt.Printf("Project %s not found in configuration\n", projectName)
+	},
+}
+
 func loadConfig() Config {
 	var configPath string
 	if runtime.GOOS == "windows" {
@@ -159,6 +192,15 @@ func updateProject(p Project) {
 		return
 	}
 
+	if p.BuildCommand != "" {
+		fmt.Println("→ Running build command for", p.Name)
+		cmd := exec.Command("bash", "-c", p.BuildCommand)
+		cmd.Dir = p.Path
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		cmd.Run()
+	}
+
 	switch p.Type {
 	case "pm2":
 		fmt.Println("→ Restarting PM2 process:", p.Name)
@@ -167,14 +209,9 @@ func updateProject(p Project) {
 		cmd.Stderr = os.Stderr
 		cmd.Run()
 	case "docker":
-		fmt.Println("→ Rebuilding Docker container for", p.Name)
-		cmd := exec.Command("bash", "-c", p.BuildCommand)
-		cmd.Dir = p.Path
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		cmd.Run()
+		// Build command already run above
 	case "static":
-		// No additional action needed, git pull is sufficient
+		// No additional action needed
 	default:
 		fmt.Println("Unknown type:", p.Type)
 	}

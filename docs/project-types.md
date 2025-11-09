@@ -27,12 +27,14 @@ For Node.js applications managed by PM2 process manager.
 **Process:**
 
 1. Pull latest Git changes
-2. Restart the PM2 process
+2. Execute the `buildCommand` (if configured)
+3. Restart the PM2 process
 
 **Example:**
 
 ```yaml
 type: pm2
+buildCommand: npm install && npm run build
 ```
 
 **Requirements:** PM2 must be installed and the app started with `pm2 start`
@@ -47,12 +49,13 @@ For static websites or projects that only need Git pulls.
 **Process:**
 
 1. Pull latest Git changes
-2. No further action
+2. Execute the `buildCommand` (if configured)
 
 **Example:**
 
 ```yaml
 type: static
+buildCommand: npm run build
 ```
 
 **Use cases:** Static site generators, documentation sites

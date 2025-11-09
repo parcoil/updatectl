@@ -1,5 +1,9 @@
 import { defineConfig } from "vitepress";
 
+const currentTimestamp = Date.now();
+const currentDate = new Date(currentTimestamp);
+const currentYear = currentDate.getFullYear();
+
 export default defineConfig({
   title: "Updatectl",
   description: "A CLI tool for automating project updates",
@@ -17,7 +21,12 @@ export default defineConfig({
 
   themeConfig: {
     logo: "/logo.svg",
-
+    search: {
+      provider: "local",
+    },
+    footer: {
+      copyright: `Copyright © ${currentYear} Parcoil`,
+    },
     nav: [
       { text: "Home", link: "/" },
       { text: "Getting Started", link: "/quickstart" },

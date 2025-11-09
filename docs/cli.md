@@ -14,6 +14,7 @@ updatectl [command]
 
 - `init` - Initialize configuration and daemon
 - `watch` - Run update daemon manually
+- `build` - Run build command for a specific project
 - `version` - Show version information
 
 ## init
@@ -35,6 +36,16 @@ updatectl watch
 ```
 
 Use for manual testing or when daemon is not running.
+
+## build
+
+Run the build command for a specific project.
+
+```bash
+updatectl build [project-name]
+```
+
+Executes the configured `buildCommand` for the specified project without pulling changes.
 
 ## version
 

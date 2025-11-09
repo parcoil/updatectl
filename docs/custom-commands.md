@@ -1,6 +1,6 @@
 # Custom Build Commands
 
-Advanced configuration for Docker and PM2 projects.
+Advanced configuration for all project types.
 
 ## Docker Commands
 
@@ -30,9 +30,39 @@ buildCommand: |
 
 ## PM2 Commands
 
-PM2 projects automatically restart the process. For custom behavior:
+PM2 projects automatically restart the process after running the build command.
 
-Currently, PM2 projects use the default restart. For advanced PM2 usage, consider using Docker type with PM2 commands.
+### Build and Restart
+
+```yaml
+buildCommand: npm install && npm run build
+```
+
+### Custom Deployment
+
+```yaml
+buildCommand: |
+  npm ci
+  npm run lint
+  npm run test
+  npm run build
+```
+
+## Static Site Commands
+
+For static sites, build commands typically generate the site.
+
+### Hugo
+
+```yaml
+buildCommand: hugo --minify
+```
+
+### Next.js Static Export
+
+```yaml
+buildCommand: npm run build && npm run export
+```
 
 ## Environment Variables
 

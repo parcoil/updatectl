@@ -16,7 +16,7 @@ projects:
     path: string      # Local filesystem path
     repo: string      # Git repository URL
     type: string      # Project type (docker/pm2/static)
-    buildCommand: string  # Build command (for docker type)
+    buildCommand: string  # Optional build command (runs after git pull)
 ```
 
 ## Examples
@@ -40,6 +40,7 @@ projects:
     path: /srv/api
     repo: https://github.com/company/api.git
     type: pm2
+    buildCommand: npm install && npm run build  # Optional: run before restart
 ```
 
 ### Static Site
@@ -50,4 +51,5 @@ projects:
     path: /var/www/docs
     repo: https://github.com/company/docs.git
     type: static
+    buildCommand: npm run build  # Optional: run after git pull
 ```
