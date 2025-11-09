@@ -173,6 +173,8 @@ func updateProject(p Project) {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Run()
+	case "static":
+		// No additional action needed, git pull is sufficient
 	default:
 		fmt.Println("Unknown type:", p.Type)
 	}

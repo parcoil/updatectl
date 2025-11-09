@@ -1,2 +1,4 @@
 *.exe
 updatectl
+docs/node_modules
+docs/.vitepress
