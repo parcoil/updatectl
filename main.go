@@ -30,12 +30,28 @@ type Config struct {
 	Projects        []Project `yaml:"projects"`
 }
 
+var listCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List configured projects",
+	Run: func(cmd *cobra.Command, args []string) {
+		config := loadConfig()
+		if len(config.Projects) == 0 {
+			fmt.Println("No projects configured.")
+			return
+		}
+		fmt.Println("Configured projects:")
+		for _, p := range config.Projects {
+			fmt.Printf("- %s (%s): %s\n", p.Name, p.Type, p.Path)
+		}
+	},
+}
+
 func main() {
 	rootCmd := &cobra.Command{
 		Use:     "updatectl",
 		Version: version,
 	}
-	rootCmd.AddCommand(initCmd, watchCmd, buildCmd)
+	rootCmd.AddCommand(initCmd, watchCmd, buildCmd, listCmd)
 	rootCmd.Execute()
 }
 
@@ -136,11 +152,7 @@ var buildCmd = &cobra.Command{
 				}
 
 				fmt.Printf("Building project %s...\n", projectName)
-				cmd := exec.Command("bash", "-c", p.BuildCommand)
-				cmd.Dir = p.Path
-				cmd.Stdout = os.Stdout
-				cmd.Stderr = os.Stderr
-				err := cmd.Run()
+				err := runBuildCommand(p.BuildCommand, p.Path)
 				if err != nil {
 					fmt.Printf("Build failed for %s: %v\n", projectName, err)
 				} else {
@@ -172,6 +184,19 @@ func loadConfig() Config {
 	return c
 }
 
+func runBuildCommand(command, dir string) error {
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd", "/C", command)
+	} else {
+		cmd = exec.Command("bash", "-c", command)
+	}
+	cmd.Dir = dir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
 func updateProject(p Project) {
 	if _, err := os.Stat(p.Path); os.IsNotExist(err) {
 		fmt.Println("Path not found:", p.Path)
@@ -194,11 +219,7 @@ func updateProject(p Project) {
 
 	if p.BuildCommand != "" {
 		fmt.Println("→ Running build command for", p.Name)
-		cmd := exec.Command("bash", "-c", p.BuildCommand)
-		cmd.Dir = p.Path
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		cmd.Run()
+		runBuildCommand(p.BuildCommand, p.Path)
 	}
 
 	switch p.Type {
