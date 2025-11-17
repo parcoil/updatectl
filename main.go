@@ -62,7 +62,7 @@ var initCmd = &cobra.Command{
 		var configDir, configPath string
 
 		if runtime.GOOS == "windows" {
-			configDir = filepath.Join(os.Getenv("ProgramData"), "updatectl")
+			configDir = filepath.Join(os.Getenv("USERPROFILE"), "updatectl")
 		} else {
 			configDir = "/etc/updatectl"
 		}
@@ -86,9 +86,45 @@ projects:
 		}
 
 		if runtime.GOOS == "windows" {
-			taskCmd := `schtasks /Create /TN "updatectl" /TR "updatectl watch" /SC ONSTART /RL HIGHEST /F`
-			exec.Command("cmd", "/C", taskCmd).Run()
+			taskName := "updatectl"
+			configDir := filepath.Join(os.Getenv("USERPROFILE"), "updatectl")
+
+			batScript := fmt.Sprintf(`@echo off
+start "" /b "%s" watch
+`, filepath.Join(configDir, "updatectl.exe"))
+			batScriptPath := filepath.Join(configDir, "run_updatectl.bat")
+
+			err := os.WriteFile(batScriptPath, []byte(batScript), 0644)
+			if err != nil {
+				fmt.Println("Failed to write batch wrapper script:", err)
+				return
+			}
+
+			taskRun := batScriptPath
+
+			cmd := exec.Command(
+				"schtasks",
+				"/Create",
+				"/TN", taskName,
+				"/TR", taskRun,
+				"/SC", "ONSTART",
+				"/RL", "HIGHEST",
+				"/F",
+			)
+			output, err := cmd.CombinedOutput()
+			if err != nil {
+				fmt.Printf("Failed to create scheduled task: %v\nOutput: %s\n", err, output)
+				return
+			}
 			fmt.Println("Created Windows Task Scheduler job for updatectl.")
+
+			runCmd := exec.Command("schtasks", "/Run", "/TN", taskName)
+			runOutput, runErr := runCmd.CombinedOutput()
+			if runErr != nil {
+				fmt.Printf("Failed to run scheduled task immediately: %v\nOutput: %s\n", runErr, runOutput)
+			} else {
+				fmt.Println("Scheduled task started immediately.")
+			}
 		} else {
 			fmt.Print("Enter the user for the systemd service (default: root): ")
 			scanner := bufio.NewScanner(os.Stdin)
@@ -168,7 +204,7 @@ var buildCmd = &cobra.Command{
 func loadConfig() Config {
 	var configPath string
 	if runtime.GOOS == "windows" {
-		configPath = filepath.Join(os.Getenv("ProgramData"), "updatectl", "updatectl.yaml")
+		configPath = filepath.Join(os.Getenv("USERPROFILE"), "updatectl", "updatectl.yaml")
 	} else {
 		configPath = "/etc/updatectl/updatectl.yaml"
 	}

@@ -7,6 +7,7 @@ const currentYear = currentDate.getFullYear();
 export default defineConfig({
   title: "Updatectl",
   description: "A CLI tool for automating project updates",
+  cleanUrls: true,
   base: "/",
   head: [
     ["link", { rel: "icon", href: "/icon.ico" }],
