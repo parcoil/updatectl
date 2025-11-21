@@ -77,12 +77,6 @@ var initCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		if runtime.GOOS != "windows" && os.Geteuid() != 0 {
-			fmt.Println("Error: This command requires root privileges on Linux.")
-			fmt.Println("Please run: sudo updatectl init")
-			os.Exit(1)
-		}
-
 		var configDir, configPath string
 		if runtime.GOOS == "windows" {
 			configDir = filepath.Join(os.Getenv("USERPROFILE"), "updatectl")
@@ -91,10 +85,6 @@ var initCmd = &cobra.Command{
 		}
 		configPath = filepath.Join(configDir, "updatectl.yaml")
 
-		if err := os.MkdirAll(configDir, 0755); err != nil {
-			fmt.Printf("Failed to create config directory: %v\n", err)
-			os.Exit(1)
-		}
 		if err := os.MkdirAll(configDir, 0755); err != nil {
 			fmt.Printf("Failed to create config directory: %v\n", err)
 			os.Exit(1)
@@ -130,10 +120,6 @@ projects:
 				fmt.Printf("Failed to write config file: %v\n", err)
 				os.Exit(1)
 			}
-			if err := os.WriteFile(configPath, defaultConfig, 0644); err != nil {
-				fmt.Printf("Failed to write config file: %v\n", err)
-				os.Exit(1)
-			}
 			fmt.Println("Created config at", configPath)
 		} else {
 			fmt.Println("Config already exists at", configPath)
@@ -153,7 +139,6 @@ start "" /b "%s" watch
 			}
 			taskRun := batScriptPath
 			createCmd := exec.Command(
-			createCmd := exec.Command(
 				"schtasks",
 				"/Create",
 				"/TN", taskName,
@@ -162,7 +147,6 @@ start "" /b "%s" watch
 				"/RL", "HIGHEST",
 				"/F",
 			)
-			output, err := createCmd.CombinedOutput()
 			output, err := createCmd.CombinedOutput()
 			if err != nil {
 				fmt.Printf("Failed to create scheduled task: %v\nOutput: %s\n", err, output)
@@ -180,7 +164,6 @@ start "" /b "%s" watch
 			fmt.Print("Enter the user for the systemd service (default: root): ")
 			scanner := bufio.NewScanner(os.Stdin)
 			scanner.Scan()
-			user := strings.TrimSpace(scanner.Text())
 			user := strings.TrimSpace(scanner.Text())
 			if user == "" {
 				user = "root"
@@ -217,27 +200,7 @@ WantedBy=multi-user.target
 				fmt.Printf("Failed to enable and start service: %v\nOutput: %s\n", err, output)
 				os.Exit(1)
 			}
-			if err := os.WriteFile(servicePath, []byte(service), 0644); err != nil {
-				fmt.Printf("Failed to write systemd service file: %v\n", err)
-				os.Exit(1)
-			}
-			fmt.Println("Created systemd service file at", servicePath)
-
-			reloadCmd := exec.Command("systemctl", "daemon-reload")
-			if err := reloadCmd.Run(); err != nil {
-				fmt.Printf("Failed to reload systemd daemon: %v\n", err)
-				os.Exit(1)
-			}
-			fmt.Println("Reloaded systemd daemon")
-
-			enableCmd := exec.Command("systemctl", "enable", "--now", "updatectl")
-			if output, err := enableCmd.CombinedOutput(); err != nil {
-				fmt.Printf("Failed to enable and start service: %v\nOutput: %s\n", err, output)
-				os.Exit(1)
-			}
 			fmt.Println("Systemd service installed and started.")
-			fmt.Println("\nCheck status with: sudo systemctl status updatectl")
-			fmt.Println("View logs with: sudo journalctl -u updatectl -f")
 			fmt.Println("\nCheck status with: sudo systemctl status updatectl")
 			fmt.Println("View logs with: sudo journalctl -u updatectl -f")
 		}
@@ -505,7 +468,6 @@ if p.Type == "image" {
 
 	if _, err := os.Stat(p.Path); os.IsNotExist(err) {
 		fmt.Println("✘ Path not found:", p.Path)
-		fmt.Println("✘ Path not found:", p.Path)
 		return
 	}
 
@@ -514,13 +476,11 @@ if p.Type == "image" {
 	output, err := gitPull.CombinedOutput()
 	if err != nil {
 		fmt.Println("✘ Git pull failed:", err)
-		fmt.Println("✘ Git pull failed:", err)
 		return
 	}
 	fmt.Print(string(output))
 
 	if strings.Contains(string(output), "Already up to date.") {
-		fmt.Println("● No new commits for", p.Name)
 		fmt.Println("● No new commits for", p.Name)
 		return
 	}
