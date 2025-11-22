@@ -54,4 +54,4 @@ Monitor resource usage:
 ps aux | grep updatectl
 ```
 
-Adjust `intervalMinutes` based on system load.
+Adjust `interval` based on system load.

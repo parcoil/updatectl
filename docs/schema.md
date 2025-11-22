@@ -6,7 +6,8 @@ Detailed YAML configuration reference.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `intervalMinutes` | integer | Yes | Minutes between update checks |
+| `interval` | integer | Yes | Seconds between update checks |
+| `intervalMinutes` | integer | No | **Deprecated**: Use `interval` instead |
 | `projects` | array | Yes | List of projects to monitor |
 
 ## Project Object
@@ -25,7 +26,8 @@ Detailed YAML configuration reference.
 
 ## Validation Rules
 
-- `intervalMinutes`: Must be positive integer
+- `interval`: Must be positive integer (seconds)
+- `intervalMinutes`: **Deprecated**: Use `interval` instead
 - `path`: Must exist and be writable (required for git-based types)
 - `repo`: Must be valid Git URL (required for git-based types)
 - `type`: Must be one of supported types: `docker`, `pm2`, `static`, `image`
@@ -38,7 +40,7 @@ Detailed YAML configuration reference.
 ## Example
 
 ```yaml
-intervalMinutes: 30
+interval: 1800  # 30 minutes
 projects:
   - name: frontend
     path: /srv/frontend

@@ -10,7 +10,8 @@ Updatectl uses a YAML configuration file to define update intervals and projects
 ## Schema
 
 ```yaml
-intervalMinutes: 10  # Check interval in minutes
+interval: 600  # Check interval in seconds (recommended)
+intervalMinutes: 10  # Deprecated: Use interval instead
 projects:
   - name: string      # Project identifier
     path: string      # Local filesystem path (required for git-based types)

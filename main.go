@@ -18,19 +18,21 @@ import (
 var version = "0.1.0"
 
 type Project struct {
-	Name         string            `yaml:"name"`
-	Path         string            `yaml:"path"`
-	Repo         string            `yaml:"repo"`
-	Type         string            `yaml:"type"`
-	BuildCommand string            `yaml:"buildCommand"`
-	Image        string            `yaml:"image"`        // Docker image to pull (e.g., "ghcr.io/user/vite-app:main")
-	Port         string            `yaml:"port"`         // Port mapping (e.g., "80:80" or "3000:80")
-	Env          map[string]string `yaml:"env"`          // Environment variables
-	ContainerName string           `yaml:"containerName"` // Optional custom container name
+	Name          string            `yaml:"name"`
+	Path          string            `yaml:"path"`
+	Repo          string            `yaml:"repo"`
+	Type          string            `yaml:"type"`
+	BuildCommand  string            `yaml:"buildCommand"`
+	Image         string            `yaml:"image"`         // Docker image to pull (e.g., "ghcr.io/user/vite-app:main")
+	Port          string            `yaml:"port"`          // Port mapping (e.g., "80:80" or "3000:80")
+	Env           map[string]string `yaml:"env"`           // Environment variables
+	ContainerName string            `yaml:"containerName"` // Optional custom container name
 }
 
 type Config struct {
+	// Deprecated: Use Interval instead.
 	IntervalMinutes int       `yaml:"intervalMinutes"`
+	Interval        int       `yaml:"interval"`
 	Projects        []Project `yaml:"projects"`
 }
 
@@ -91,7 +93,8 @@ var initCmd = &cobra.Command{
 		}
 
 		if _, err := os.Stat(configPath); os.IsNotExist(err) {
-			defaultConfig := []byte(`intervalMinutes: 10
+			defaultConfig := []byte(`interval: 600
+intervalMinutes: 10
 projects:
   # Git-based project with Docker build
   - name: example-git
@@ -224,11 +227,11 @@ var logsCmd = &cobra.Command{
 
 		// Linux - use journalctl
 		journalArgs := []string{"-u", "updatectl"}
-		
+
 		if follow {
 			journalArgs = append(journalArgs, "-f")
 		}
-		
+
 		if lines > 0 {
 			journalArgs = append(journalArgs, "-n", fmt.Sprintf("%d", lines))
 		}
@@ -256,14 +259,20 @@ var watchCmd = &cobra.Command{
 	Short: "Run updatectl daemon to auto-update projects",
 	Run: func(cmd *cobra.Command, args []string) {
 		config := loadConfig()
-		fmt.Printf("Running updatectl every %d minutes...\n", config.IntervalMinutes)
+		var intervalSeconds int
+		if config.Interval > 0 {
+			intervalSeconds = config.Interval
+		} else {
+			intervalSeconds = config.IntervalMinutes * 60
+		}
+		fmt.Printf("Running updatectl every %d seconds...\n", intervalSeconds)
 
 		for {
 			for _, p := range config.Projects {
 				fmt.Println("Checking", p.Name)
 				updateProject(p)
 			}
-			time.Sleep(time.Duration(config.IntervalMinutes) * time.Minute)
+			time.Sleep(time.Duration(intervalSeconds) * time.Second)
 		}
 	},
 }
@@ -356,29 +365,29 @@ func restartDockerContainer(p Project) error {
 	fmt.Println("→ Stopping old container:", containerName)
 	stopCmd := exec.Command("docker", "stop", containerName)
 	stopCmd.Run() // Ignore error if container doesn't exist
-	
+
 	rmCmd := exec.Command("docker", "rm", containerName)
 	rmCmd.Run() // Ignore error if container doesn't exist
 
 	// Build docker run command
 	args := []string{"run", "-d", "--name", containerName}
-	
+
 	// Add port mapping if specified
 	if p.Port != "" {
 		args = append(args, "-p", p.Port)
 	}
-	
+
 	// Add environment variables
 	for key, value := range p.Env {
 		args = append(args, "-e", fmt.Sprintf("%s=%s", key, value))
 	}
-	
+
 	// Add restart policy
 	args = append(args, "--restart", "unless-stopped")
-	
+
 	// Add image
 	args = append(args, p.Image)
-	
+
 	fmt.Println("→ Starting new container:", containerName)
 	cmd := exec.Command("docker", args...)
 	cmd.Stdout = os.Stdout
@@ -405,7 +414,7 @@ func getRemoteImageDigest(image string) (string, error) {
 	return "", fmt.Errorf("could not parse digest from manifest")
 }
 func updateProject(p Project) {
-if p.Type == "image" {
+	if p.Type == "image" {
 		if p.Image == "" {
 			fmt.Println("✘ No image specified for project:", p.Name)
 			return
@@ -422,7 +431,7 @@ if p.Type == "image" {
 
 		currentDigest, _ := getImageDigest(p.Image)
 		fmt.Println("→ Current local digest:", currentDigest)
-		
+
 		remoteDigest, err := getRemoteImageDigest(p.Image)
 		if err != nil {
 			fmt.Println("→ Could not check remote digest, forcing pull:", err)

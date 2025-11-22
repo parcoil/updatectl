@@ -23,14 +23,6 @@ go mod download
 go build
 ```
 
-## Testing
-
-Run tests:
-
-```bash
-go test ./...
-```
-
 ## Pull Requests
 
 1. Fork the repository
@@ -44,4 +36,4 @@ Report bugs and request features on GitHub Issues.
 
 ## Documentation
 
-Update documentation for any new features in `docs/`.
+Update documentation for any new features or changes in `docs/`.
